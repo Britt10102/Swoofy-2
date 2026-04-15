@@ -23,7 +23,8 @@ namespace Swoofy.API.Controllers
         {
             SqlConnection con = new SqlConnection(_configuration.GetConnectionString("SwoofyCon").ToString());
             con.Open();
-            SqlCommand cmd = new SqlCommand("INSERT INTO Registration(UserName, Password, Email, IsActive) VALUES('" + registration.UserName + "','" + registration.Password + "','" + registration.Email + "','" + registration.IsActive + "')", con);
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(registration.Password);
+            SqlCommand cmd = new SqlCommand("INSERT INTO Registration(UserName, Password, Email, IsActive) VALUES('" + registration.UserName + "','" + hashedPassword + "','" + registration.Email + "','" + registration.IsActive + "')", con);
             int i = cmd.ExecuteNonQuery();
             con.Close();
             if (i > 0) {
@@ -39,14 +40,20 @@ namespace Swoofy.API.Controllers
         public string login(Registration registration)
         {
             SqlConnection con = new SqlConnection(_configuration.GetConnectionString("SwoofyCon").ToString());
-            SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM Registration WHERE Email = '" + registration.Email + "' AND Password = '" + registration.Password + "' AND IsActive = 1", con);
+            con.Open();
+            SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM Registration WHERE Email = '" + registration.Email +"' AND IsActive = 1", con);
             DataTable dt = new DataTable();
             da.Fill(dt);
+            con.Close();
             if (dt.Rows.Count > 0) {
-                return "Valid User";
-            } else {
-                return "Invalid User";
+                string hashedPasswordFromDB = dt.Rows[0]["Password"].ToString();
+                bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(registration.Password, hashedPasswordFromDB);
+
+                if (isPasswordCorrect) {
+                    return "Valid User";
+                }
             }
+            return "Invalid User";
 
         }
     }
