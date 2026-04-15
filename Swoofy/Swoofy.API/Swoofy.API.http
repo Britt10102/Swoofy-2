@@ -1,0 +1,5 @@
+@Swoofy.API_HostAddress = http://localhost:5231
+
+GET {{Swoofy.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
