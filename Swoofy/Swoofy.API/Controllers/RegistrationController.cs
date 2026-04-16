@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Swoofy.API.Models;
+using Swoofy.API.Services;
 using System.Data;
 
 namespace Swoofy.API.Controllers
@@ -11,10 +12,12 @@ namespace Swoofy.API.Controllers
     public class RegistrationController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly JwtService _jwtService;
 
-        public RegistrationController(IConfiguration configuration)
+        public RegistrationController(IConfiguration configuration, JwtService jwtService)
         {
             _configuration = configuration;
+            _jwtService = jwtService;
         }
 
         [HttpPost]
@@ -50,7 +53,8 @@ namespace Swoofy.API.Controllers
                 bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(registration.Password, hashedPasswordFromDB);
 
                 if (isPasswordCorrect) {
-                    return "Valid User";
+                    var token = _jwtService.GenerateToken(registration.Email);
+                    return token;
                 }
             }
             return "Invalid User";
